@@ -13,7 +13,7 @@ public class Main {
 		bnf.parse();
 		bnf.setText("b=a+4"); // edit setText to addEquation
 		bnf.parse();
-		System.out.println(bnf.getVarList());
+		System.out.println(bnf.getVar("b"));
 		//test//
 
 	}

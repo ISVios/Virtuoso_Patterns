@@ -117,7 +117,7 @@ public class BNF {
   ///
   public double getVar(String varName) {
 
-    return (double) vars.get(varName).doubleValue();
+    return (double) vars.get(varName).doubleValue(); // add error exception
 
   }
 
