@@ -4,640 +4,650 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class BNF {
-  ///
-  private int position = -1;
-  private int offset = 0;
-  private String text;
-  private ArrayList<String> terminal;
-  private final HashMap<String, Double> vars; // local var
+	///
+	private int position = -1;
+	private int offset = 0;
+	private int currEquation = 0;
+	private String text;
+	private ArrayList<String> equations;
+	private ArrayList<String> terminal;
+	private final HashMap<String, Double> vars; // local var
 
-  ///
-  public BNF() {
+	///
+	public BNF() {
 
-    vars = new HashMap<>();
-    terminal = new ArrayList<>();
+		vars = new HashMap<>();
+		equations = new ArrayList<>();
+		terminal = new ArrayList<>();
 
-  }
+	}
 
-  ///
-  public void setText(String text) {
+	public void addEquation(String equation) {
 
-    this.text = text;
+		this.equations.add(equation);
 
-  }
+	}
 
-  ///
-  private String nextTerminal() {
+	///
+	private String nextTerminal() {
 
-    char achar;
+		char achar;
 
-    boolean space = false;
+		boolean space = false;
 
-    StringBuilder stringBuilder = new StringBuilder();
+		StringBuilder stringBuilder = new StringBuilder();
 
-    while(offset < text.length()) {
+		while (offset < text.length()) {
 
-      achar = text.charAt(offset);
+			achar = text.charAt(offset);
 
-      if(achar == ':' || achar == ',' || achar == '=' || achar == '+' || achar == '-' || achar == '*' || achar == '/'
-          || achar == '^' || achar == '(' || achar == ')') {
+			if (achar == ':' || achar == ',' || achar == '=' || achar == '+' || achar == '-' || achar == '*'
+					|| achar == '/' || achar == '^' || achar == '(' || achar == ')') {
 
-        if(space)
-          return stringBuilder.toString();
+				if (space)
+					return stringBuilder.toString();
 
-        if(!stringBuilder.toString().isEmpty()) {
-          return stringBuilder.toString();
-        }
+				if (!stringBuilder.toString().isEmpty()) {
+					return stringBuilder.toString();
+				}
 
-        stringBuilder.append(achar);
-        offset++;
-        return stringBuilder.toString();
-      } else if(achar != ' ' && achar != '\n') {
+				stringBuilder.append(achar);
+				offset++;
+				return stringBuilder.toString();
+			} else if (achar != ' ' && achar != '\n') {
 
-        if(space)
-          return stringBuilder.toString();
+				if (space)
+					return stringBuilder.toString();
 
-        stringBuilder.append(achar);
+				stringBuilder.append(achar);
 
-      } else if(achar == ' ' || achar == '\n') {
+			} else if (achar == ' ' || achar == '\n') {
 
-        if(!stringBuilder.toString().isEmpty()) {
-          space = true;
-        }
-      }
+				if (!stringBuilder.toString().isEmpty()) {
+					space = true;
+				}
+			}
 
-      offset++;
+			offset++;
 
-    }
+		}
 
-    return stringBuilder.toString();
+		return stringBuilder.toString();
 
-  }
+	}
 
-  ///
-  public String nextToken() {
+	///
+	public String nextToken() {
 
-    String next = nextTerminal();
-    
-    if(next == null) {
-      
-      
-      System.out.println("end");
-      
-      return null;
-      
-      
-    }
-    
-    terminal.add(next);
+		String next = nextTerminal();
 
-    position += 1;
-    
-    return next;
-  }
+		if (next == null) {
 
-  ///
-  private String currentToken() throws BNFException {
+			System.out.println("end");
 
-    if(position > terminal.size()) {
+			return null;
 
-      throw new BNFException(getOffset(), currentToken().length(), -1, "");
-    }
+		}
 
-    return terminal.get(position);
-  }
+		terminal.add(next);
 
-  ///
-  public int getOffset() {
+		position += 1;
 
-    return offset;
+		return next;
+	}
 
-  }
+	///
+	private String currentToken() throws BNFException {
 
-  ///
-  public double getVar(String varName) {
+		if (position > terminal.size()) {
 
-    return (double) vars.get(varName).doubleValue(); // add error exception
+			throw new BNFException(getOffset(), currentToken().length(), -1, "");
+		}
 
-  }
+		return terminal.get(position);
+	}
 
-  ///
-  public void parse() throws BNFException {
+	///
+	public int getOffset() {
 
-    parseYazik();
-  }
+		return offset;
 
-  ///
-  private void parseYazik() throws BNFException {
+	}
 
-    String tok = nextToken();
-    
-    if( nextToken().equals("=")) {
-      
-      nextToken();
-      vars.put(tok, getRightPart());
+	///
+	public double getVar(String varName) {
 
-    }
+		return (double) vars.get(varName).doubleValue(); // add error exception
 
-  }
+	}
 
-  ///
-  private double getRightPart() throws BNFException {
+	///
+	public void parse() throws BNFException {
 
-    double minus = 1.0;
+		parseYazik();
+	}
 
-    if(currentToken().equals("-")) {
+	///
+	private void parseYazik() throws BNFException {
 
-      minus = -1.0;
-      nextToken();
+		for (String eq : equations) {
+			
+			text = eq;
+			
+			position = -1;
+			offset = 0;
+			currEquation = 0;
+			terminal.clear();
+			
+			String tok = nextToken();
 
-    } else if(currentToken().equals("+")) {
+			if (nextToken().equals("=")) {
 
-      nextToken();
+				nextToken();
+				vars.put(tok, getRightPart());
 
-    } else if(isMulSign(currentToken())) {
+			}
+		}
 
-      throw new BNFException(getOffset(), currentToken().length(), 4, currentToken());
+	}
 
-    } else if(currentToken().equals("^")) {
+	///
+	private double getRightPart() throws BNFException {
 
-      throw new BNFException(getOffset(), currentToken().length(), 5, currentToken());
-    }
+		double minus = 1.0;
 
-    return parsAdiBlock() * minus;
-  }
+		if (currentToken().equals("-")) {
 
-  ///
-  private double parsAdiBlock() throws BNFException {
+			minus = -1.0;
+			nextToken();
 
-    boolean start = false;
+		} else if (currentToken().equals("+")) {
 
-    double result = 0;
-    double acum = 0;
+			nextToken();
 
-    do {
+		} else if (isMulSign(currentToken())) {
 
-      if(!start) {
+			throw new BNFException(getOffset(), currentToken().length(), 4, currentToken());
 
-        result = parseMulBlock();
+		} else if (currentToken().equals("^")) {
 
-        start = true;
+			throw new BNFException(getOffset(), currentToken().length(), 5, currentToken());
+		}
 
-      } else {
+		return parsAdiBlock() * minus;
+	}
 
-        String com = currentToken();
+	///
+	private double parsAdiBlock() throws BNFException {
 
-        nextToken();
+		boolean start = false;
 
-        if(isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
+		double result = 0;
+		double acum = 0;
 
-          throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
+		do {
 
-        }
+			if (!start) {
 
-        acum = parseMulBlock();
+				result = parseMulBlock();
 
-        if(com.equals("+")) {
+				start = true;
 
-          result += acum;
+			} else {
 
-        } else if(com.equals("-")) {
+				String com = currentToken();
 
-          result -= acum;
+				nextToken();
 
-        }
+				if (isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
 
-      }
+					throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
 
-    } while(isAddSign(currentToken()));
+				}
 
-    return result;
+				acum = parseMulBlock();
 
-  }
+				if (com.equals("+")) {
 
-  ///
-  private double parseMulBlock() throws BNFException {
+					result += acum;
 
-    boolean start = false;
+				} else if (com.equals("-")) {
 
-    double result = 1.0;
-    double acum = 1.0;
+					result -= acum;
 
-    do {
+				}
 
-      if(!start) {
+			}
 
-        result = parsePowBlock();
+		} while (isAddSign(currentToken()));
 
-        start = true;
+		return result;
 
-      } else {
+	}
 
-        String com = currentToken();
+	///
+	private double parseMulBlock() throws BNFException {
 
-        nextToken();
-        if(isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
+		boolean start = false;
 
-          throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
-        }
+		double result = 1.0;
+		double acum = 1.0;
 
-        acum = parsePowBlock();
+		do {
 
-        if(com.equals("*")) {
+			if (!start) {
 
-          result *= acum;
+				result = parsePowBlock();
 
-        } else if(com.equals("/")) {
+				start = true;
 
-          result /= acum;
+			} else {
 
-        }
+				String com = currentToken();
 
-      }
+				nextToken();
+				if (isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
 
-    } while(isMulSign(currentToken()));
+					throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
+				}
 
-    return result;
+				acum = parsePowBlock();
 
-  }
+				if (com.equals("*")) {
 
-  ///
-  private double parsePowBlock() throws BNFException {
-    boolean start = false;
+					result *= acum;
 
-    double result = 0.0;
-    double acum = 0.0;
+				} else if (com.equals("/")) {
 
-    do {
+					result /= acum;
 
-      if(!start) {
+				}
 
-        result = parseFuncBlock();
+			}
 
-        start = true;
+		} while (isMulSign(currentToken()));
 
-      } else {
+		return result;
 
-        nextToken();
+	}
 
-        if(currentToken().equals("^")) {
+	///
+	private double parsePowBlock() throws BNFException {
+		boolean start = false;
 
-          throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
-        } else if(isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
+		double result = 0.0;
+		double acum = 0.0;
 
-          throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
-        }
-        acum = parseFuncBlock();
+		do {
 
-        result = Math.pow(result, acum);
+			if (!start) {
 
-      }
+				result = parseFuncBlock();
 
-    } while(currentToken().equals("^"));
+				start = true;
 
-    return result;
-  }
+			} else {
 
-  ///
-  private double parseFuncBlock() throws BNFException {
+				nextToken();
 
-    double result = 0;
+				if (currentToken().equals("^")) {
 
-    if(parseFunc(currentToken())) {
+					throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
+				} else if (isMulSign(currentToken()) || currentToken().charAt(0) == ')') {
 
-      String func = currentToken();
+					throw new BNFException(getOffset(), currentToken().length(), 20, currentToken());
+				}
+				acum = parseFuncBlock();
 
-      nextToken();
+				result = Math.pow(result, acum);
 
-      if(!currentToken().equals("(")) {
-        throw new BNFException(getOffset(), currentToken().length(), 9, currentToken());
-      }
+			}
 
-      nextToken();
+		} while (currentToken().equals("^"));
 
-      switch(func) {
-      case "abs":
-        result = Math.abs(getRightPart());
-        break;
-      case "sin":
-        result = Math.sin(getRightPart());
-        break;
-      case "cos":
-        result = Math.cos(getRightPart());
-        break;
-      case "ln":
-        result = Math.log(getRightPart());
-        break;
-      case "sqrt":
-        result = Math.sqrt(getRightPart());
-        break;
-      }
+		return result;
+	}
 
-      if(!currentToken().equals(")")) {
-        throw new BNFException(getOffset(), currentToken().length(), 10, currentToken());
-      }
+	///
+	private double parseFuncBlock() throws BNFException {
 
-      nextToken();
+		double result = 0;
 
-      return result;
+		if (parseFunc(currentToken())) {
 
-    }
+			String func = currentToken();
 
-    result = parseElemBlock();
+			nextToken();
 
-    return result;
+			if (!currentToken().equals("(")) {
+				throw new BNFException(getOffset(), currentToken().length(), 9, currentToken());
+			}
 
-  }
+			nextToken();
 
-  ///
-  private double parseElemBlock() throws BNFException {
+			switch (func) {
+			case "abs":
+				result = Math.abs(getRightPart());
+				break;
+			case "sin":
+				result = Math.sin(getRightPart());
+				break;
+			case "cos":
+				result = Math.cos(getRightPart());
+				break;
+			case "ln":
+				result = Math.log(getRightPart());
+				break;
+			case "sqrt":
+				result = Math.sqrt(getRightPart());
+				break;
+			}
 
-    double elm = 0;
-    if(Character.isLetter(currentToken().charAt(0))) {
+			if (!currentToken().equals(")")) {
+				throw new BNFException(getOffset(), currentToken().length(), 10, currentToken());
+			}
 
-      if(!isChar(currentToken())) {
-        throw new BNFException(getOffset(), currentToken().length(), 15, currentToken());
-      }
-      if(isVar(currentToken()) != null) {
-        elm = vars.get(currentToken());
-      }
-    } else if(isSteloe(currentToken())) {
+			nextToken();
 
-      for (int i = 0; i < currentToken().length(); i++) {
+			return result;
 
-        if(!isNumb(currentToken().charAt(i) + "")) {
-          throw new BNFException(getOffset(), currentToken().length(), 11, currentToken());
-        }
-      }
-      elm = parseSteloe(currentToken());
+		}
 
-    } else if(currentToken().equals("")) {
+		result = parseElemBlock();
 
-      while(currentToken().equals(""))
-        nextToken();
+		return result;
 
-    } else {
+	}
 
-      boolean open = false;
-      int pos = -1;
+	///
+	private double parseElemBlock() throws BNFException {
 
-      if(currentToken().equals("(")) {
-        open = true;
-        pos = getOffset();
+		double elm = 0;
+		if (Character.isLetter(currentToken().charAt(0))) {
 
-        nextToken();
-      }
-      double result = getRightPart();
+			if (!isChar(currentToken())) {
+				throw new BNFException(getOffset(), currentToken().length(), 15, currentToken());
+			}
+			if (isVar(currentToken()) != null) {
+				elm = vars.get(currentToken());
+			}
+		} else if (isSteloe(currentToken())) {
 
-      if(currentToken().equals(")")) {
-        if(!open) {
-          throw new BNFException(pos + getOffset(), getOffset(), 12, ")");
+			for (int i = 0; i < currentToken().length(); i++) {
 
-        }
+				if (!isNumb(currentToken().charAt(i) + "")) {
+					throw new BNFException(getOffset(), currentToken().length(), 11, currentToken());
+				}
+			}
+			elm = parseSteloe(currentToken());
 
-        pos = getOffset();
+		} else if (currentToken().equals("")) {
 
-        nextToken();
+			while (currentToken().equals(""))
+				nextToken();
 
-        open = false;
+		} else {
 
-      }
+			boolean open = false;
+			int pos = -1;
 
-      if(open) {
+			if (currentToken().equals("(")) {
+				open = true;
+				pos = getOffset();
 
-        throw new BNFException(pos + getOffset(), getOffset(), 13, "(");
+				nextToken();
+			}
+			double result = getRightPart();
 
-      }
+			if (currentToken().equals(")")) {
+				if (!open) {
+					throw new BNFException(pos + getOffset(), getOffset(), 12, ")");
 
-      return result;
+				}
 
-    }
+				pos = getOffset();
 
-    nextToken();
+				nextToken();
 
-    return elm;
+				open = false;
 
-  }
+			}
 
-  ///
-  private double parseSteloe(String currentToken) {
-    
-    int sel = 0;
+			if (open) {
 
-    try {
+				throw new BNFException(pos + getOffset(), getOffset(), 13, "(");
 
-      sel = Integer.parseInt(currentToken, 8);
+			}
 
-    } catch (Exception e) {
-      System.out.println("is not sel");
-    }
+			return result;
 
-    return sel;
+		}
 
-  }
+		nextToken();
 
-  ///
-  private boolean isSteloe(String currentToken) {
+		return elm;
 
-    try {
+	}
 
-      Integer.parseInt(currentToken);
-      //return true;
+	///
+	private double parseSteloe(String currentToken) {
 
-    } catch (Exception e) {
-      
-      return false;
+		int sel = 0;
 
-    }
+		try {
 
-    return true;
+			sel = Integer.parseInt(currentToken, 8);
 
-  }
+		} catch (Exception e) {
+			System.out.println("is not sel");
+		}
 
-  ///
-  private boolean parseFunc(String func) {
-    switch(func) {
-    case "abs":
-    case "sin":
-    case "cos":
-    case "ln":
-    case "sqrt":
-      return true;
-    default:
-      return false;
-    }
-  }
+		return sel;
 
-  ///
-  void parseElement() {
+	}
 
-  }
+	///
+	private boolean isSteloe(String currentToken) {
 
-  ///
-  private String isVar(String var) throws BNFException {
+		try {
 
-    if(!isChar(var.charAt(0) + "")) {
+			Integer.parseInt(currentToken);
+			// return true;
 
-      throw new BNFException(getOffset(), var.length(), 15, var);
-    }
+		} catch (Exception e) {
 
-    int i = 1;
-    while(i < var.length()) {
+			return false;
 
-      if(!(isNumb((var.charAt(i) + "")) || isChar(var.charAt(i) + ""))) {
-        throw new BNFException(getOffset(), var.length(), 16, var);
-      }
+		}
 
-      i++;
-    }
+		return true;
 
-    return var;
-  }
+	}
 
-  ///
-  public double solution() {
+	///
+	private boolean parseFunc(String func) {
+		switch (func) {
+		case "abs":
+		case "sin":
+		case "cos":
+		case "ln":
+		case "sqrt":
+			return true;
+		default:
+			return false;
+		}
+	}
 
-    return 0;
+	///
+	void parseElement() {
 
-  }
+	}
 
-  ///
-  public boolean isChar(String achar) {
+	///
+	private String isVar(String var) throws BNFException {
 
-    switch(achar.trim().toLowerCase()) {
+		if (!isChar(var.charAt(0) + "")) {
 
-    case "a":
-    case "b":
-    case "c":
-    case "d":
-    case "e":
-    case "f":
-    case "g":
-    case "h":
-    case "i":
-    case "j":
-    case "k":
-    case "l":
-    case "m":
-    case "n":
-    case "o":
-    case "p":
-    case "q":
-    case "r":
-    case "s":
-    case "t":
-    case "u":
-    case "v":
-    case "w":
-    case "x":
-    case "y":
-    case "z":
+			throw new BNFException(getOffset(), var.length(), 15, var);
+		}
 
-    case "а":
-    case "б":
-    case "в":
-    case "г":
-    case "д":
-    case "е":
-    case "ё":
-    case "ж":
-    case "з":
-    case "и":
-    case "й":
-    case "к":
-    case "л":
-    case "м":
-    case "н":
-    case "о":
-    case "п":
-    case "р":
-    case "с":
-    case "т":
-    case "у":
-    case "ф":
-    case "х":
-    case "ц":
-    case "ч":
-    case "ш":
-    case "щ":
-    case "ъ":
-    case "ы":
-    case "ь":
-    case "э":
-    case "ю":
-    case "я":
-      return true;
-    default:
-      return false;
+		int i = 1;
+		while (i < var.length()) {
 
-    }
+			if (!(isNumb((var.charAt(i) + "")) || isChar(var.charAt(i) + ""))) {
+				throw new BNFException(getOffset(), var.length(), 16, var);
+			}
 
-  }
+			i++;
+		}
 
-  ///
-  private boolean isNumb(String achar) {
+		return var;
+	}
 
-    switch(achar.trim().toLowerCase()) {
+	///
+	public double solution() {
 
-    case "0":
-    case "1":
-    case "2":
-    case "3":
-    case "4":
-    case "5":
-    case "6":
-    case "7":
-    case "8":
-    case "9":
-      return true;
+		return 0;
 
-    default:
-      return false;
-    }
+	}
 
-  }
+	///
+	public boolean isChar(String achar) {
 
-  ///
-  private boolean isMulSign(String sign) {
+		switch (achar.trim().toLowerCase()) {
 
-    switch(sign) {
-    case "*":
-    case "/":
-      return true;
-    default:
-      return false;
-    }
+		case "a":
+		case "b":
+		case "c":
+		case "d":
+		case "e":
+		case "f":
+		case "g":
+		case "h":
+		case "i":
+		case "j":
+		case "k":
+		case "l":
+		case "m":
+		case "n":
+		case "o":
+		case "p":
+		case "q":
+		case "r":
+		case "s":
+		case "t":
+		case "u":
+		case "v":
+		case "w":
+		case "x":
+		case "y":
+		case "z":
 
-  }
+		case "а":
+		case "б":
+		case "в":
+		case "г":
+		case "д":
+		case "е":
+		case "ё":
+		case "ж":
+		case "з":
+		case "и":
+		case "й":
+		case "к":
+		case "л":
+		case "м":
+		case "н":
+		case "о":
+		case "п":
+		case "р":
+		case "с":
+		case "т":
+		case "у":
+		case "ф":
+		case "х":
+		case "ц":
+		case "ч":
+		case "ш":
+		case "щ":
+		case "ъ":
+		case "ы":
+		case "ь":
+		case "э":
+		case "ю":
+		case "я":
+			return true;
+		default:
+			return false;
 
-  ///
-  private boolean isAddSign(String sign) {
+		}
 
-    switch(sign) {
-    case "+":
-    case "-":
-      return true;
-    default:
-      return false;
-    }
+	}
 
-  }
+	///
+	private boolean isNumb(String achar) {
 
-  ///
-  public String getVarList() {
-    
-    StringBuilder out = new  StringBuilder();
-    
-    for(String key: vars.keySet()) {
-      
-      out.append(key).append("=");
-      out.append(vars.get(key));
-      out.append("\n");
-      
-    }
-    
-    return out.toString();
-    
-  }
+		switch (achar.trim().toLowerCase()) {
+
+		case "0":
+		case "1":
+		case "2":
+		case "3":
+		case "4":
+		case "5":
+		case "6":
+		case "7":
+		case "8":
+		case "9":
+			return true;
+
+		default:
+			return false;
+		}
+
+	}
+
+	///
+	private boolean isMulSign(String sign) {
+
+		switch (sign) {
+		case "*":
+		case "/":
+			return true;
+		default:
+			return false;
+		}
+
+	}
+
+	///
+	private boolean isAddSign(String sign) {
+
+		switch (sign) {
+		case "+":
+		case "-":
+			return true;
+		default:
+			return false;
+		}
+
+	}
+
+	///
+	public String getVarList() {
+
+		StringBuilder out = new StringBuilder();
+
+		for (String key : vars.keySet()) {
+
+			out.append(key).append("=");
+			out.append(vars.get(key));
+			out.append("\n");
+
+		}
+
+		return out.toString();
+
+	}
 
 }
