@@ -1,0 +1,13 @@
+MainFrame.MenuBar.File=Файл
+///
+	MainFrame.MenuBar.File.Quit=Выход из программы
+///
+MainFrame.MenuBar.Edit=Изменить
+MainFrame.MenuBar.Help=Помощь
+///
+	MainFrame.MenuBar.Help.About=Об программе
+///
+
+
+MainFrame.Projects=Проекты
+MainFrame.Properties=Свойства
